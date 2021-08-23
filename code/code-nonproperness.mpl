@@ -2,7 +2,7 @@ with(LinearAlgebra):
 with(PolynomialIdeals):
 with(combinat): 
 
-##################the function is to generate likelihood equations automatically 
+################## The function is to generate likelihood equations automatically.
 lle := proc(f, var, par)
 local sys, i, k, newvar;
 sys := [];
@@ -14,37 +14,11 @@ newvar := [op(var), seq(L||k, k=1..nops(f)+1)];
 return sys, newvar;
 end proc:
 
-##################the function is to compute W-infinity according to LR2005 PropernessDefects
-##################init W||i: Because of likely equations, init is empty
+################## The function is to compute W-infinity according to LR2005 PropernessDefects.
+################## Init W||i: Because of likely equations, init is empty.
 wif := proc(sys, var, par)
 local G, li, i, j, lc, l, W, list;
-G   := fgb_gbasis(sys, 0, var, par, {"verb"=3, "index"=3000000});
-li  := [];
-for i from 1 to nops(var) do 
-     W||i := [];
-     for j from 1 to nops(G) do
-     	lc := lcoeff(G[j], order = tdeg(op(var)), 'lm');
-     	l  := degree(G[j], {op(var)});
-     	if l<>FAIL and l>=1 and lm=var[i]^l then
-     		W||i := [op(W||i), lc];
-     	end if;
-     end do;
-     if W||i<>[1] then
-        li := [op(li), i];
-     end if;
-end do;
-W    := Intersect(seq(PolynomialIdeal(op(W||i)), i in li));
-W    := Generators(W);
-list := factors(op(W))[2];
-list := [seq(list[i][1], i=1..nops(list))];
-return list;
-end proc:
-
-##################
-wiftime := proc(sys, var, par)
-local G, li, i, j, lc, l, W, list, st, st1;
-st  := time():
-G   := fgb_gbasis(sys, 0, var, par, {"verb"=3, "index"=3000000});
+G   := fgb_gbasis(sys, 0, var, par, {"verb"=3});
 li  := [];
 for i from 1 to nops(var) do 
      W||i := [];
@@ -63,12 +37,10 @@ W    := Intersect(seq(PolynomialIdeal(op(W||i)), i in li));
 W    := Generators(W);
 list := factors(op(W))[2];
 list := [seq(list[i][1], i=1..nops(list))];
-st1  := time()-st;
-save st1, "wiftime.txt"; 
 return list;
 end proc:
 
-##################
+################## The function is to measure time of interpolating once
 onetime := proc(f, var, par, N)
 local sys, newvar, newsys, tt, newdlist, nondlist, key, newpar, ssys, R, A, i, l, a, st, st1;
 sys, newvar := lle(f, var, par);
@@ -89,7 +61,7 @@ st1 := time()-st;
 save st1, "onetime.txt";  
 end proc:
 
-##################the function is to compute the total degree of W-infinity
+################## The function is to compute the total degree of W-infinity
 ttDegree := proc(sys, var, par, N)
 local newsys, R, t, i, list, d;
 R      := rand(1..N);
@@ -99,7 +71,7 @@ d      := add(degree(list[i]), i=1..nops(list));
 return d;
 end proc:
 
-##################the function is to compute the degree of each parameter in W-infinity
+################## The function is to compute the degree of each parameter in W-infinity
 SubttDegree := proc(sys, var, par, j, N)
 local newsys, R, i, list, d;
 R := rand(1..N);
@@ -118,7 +90,7 @@ d      := add(degree(list[i]), i=1..nops(list));
 return d;
 end proc:
 
-##################the function is to compute the degree of each parameter in the nonlinear part of W-infinity
+################## The function is to compute the degree of each parameter in the nonlinear part of W-infinity
 NonSubttDegree := proc(newsys, var, par, j, N)
 local newsyss, R, i, list, l, d, dn, k;
 R := rand(1..N);
@@ -146,16 +118,15 @@ end do;
 return d, dn, k;
 end proc:
 
-##################the function is to compute linear operator 
+################## The function is to compute linear operator. 
 LinearOperator := proc(sys, var, par, N)
 local tt, dlist, i, j, ds, dn, key, A, B, C, R, a, temp, newpar, newsys, newdlist, nondlist, k, klist, mk;
-tt     := ttDegree(sys, var, par, 1000);
+tt     := ttDegree(sys, var, par, 100);
 dlist  := [];
 for j from 1 to nops(par) do
-      ds := SubttDegree(sys, var, par, j, 1000);
+      ds := SubttDegree(sys, var, par, j, 100);
    dlist := [op(dlist), ds];
 end do;
-print(tt, dlist);
 for i from 1 to nops(dlist) do
    if  dlist[i]=max(dlist) then
          key := i;
@@ -163,7 +134,7 @@ for i from 1 to nops(dlist) do
             klist        := [];
             nondlist     := [];
             for j from 1 to nops(par) do
-                ds, dn, k  := NonSubttDegree(sys, var, par, j, 1000);
+                ds, dn, k  := NonSubttDegree(sys, var, par, j, 100);
                 klist      := [op(klist), k];
                 nondlist   := [op(nondlist), dn];
             end do; 
@@ -199,7 +170,7 @@ for i from 1 to nops(dlist) do
             klist         := [];
             nondlist      := [];
             for j from 1 to nops(par) do
-                ds, dn, k := NonSubttDegree(newsys, var, par, j, 1000);
+                ds, dn, k := NonSubttDegree(newsys, var, par, j, 100);
                 klist     := [op(klist), k];
                 newdlist  := [op(newdlist), ds];
                 nondlist  := [op(nondlist), dn];
@@ -230,13 +201,11 @@ for i from 4 to nops(par) do
     r||i := R();
 end do;
 newsys := subs(seq(par[i]=t+r||i, i=1..nops(par)), sys);
-print(newsys);
 list   := wif(newsys, var, [t]);
-print(list);
 lis    := [];
 for i from 1 to nops(list) do
     if degree(list[i], t)=1 then
-       lis := [op(lis), expand(list[i]-t)];
+       lis := [op(lis), list[i]-t];
     end if;
 end do;
 ran    := [seq(r||i, i=1..nops(par))];
@@ -323,8 +292,8 @@ else
 end if;
 end proc:
 
-##################the function is to compute linear factors with all coeff 1 of W-infinity
-cone := proc(sys, var, par, N)
+################## The function is to compute linear factors with all coeff 1 of W-infinity.
+AllOne := proc(sys, var, par, N)
 local lis, ran, de, i, j, k, S, a, m, r, clin, cdlist;
 lis, ran := getlis(sys, var, par, N);  
 de       := [op({op(denom(lis))})]; 
@@ -353,9 +322,7 @@ for i from 1 to nops(de) do
 end do;
 cdlist := [seq(0, i=1..nops(par))];
 for i from 1 to nops(par) do
-    for j from 1 to nops(clin) do
-        cdlist[i] := cdlist[i]+degree(clin[j], par[i]);
-    end do;
+    cdlist[i] := cdlist[i]+add(degree(clin[j], par[i]), j=1..nops(clin));
 end do;
 return clin, cdlist;
 end proc:
@@ -389,112 +356,88 @@ else
 end if;
 end proc:
 
-##################sampling for InterpolationAtOnce 
-Intersection := proc(sys, var, par, key, d, N)
-local ssys, R, A, i, a, list, g, K;
+##################
+Sample_notallone := proc(sys, var, par, key, td, lin, N, N_change)
+local R, R_change, A, ssys, rlin, lis, notallone_factors, K_change, i;
 global count;
-ssys := sys;
-R    := rand(1..N);
-A    := [];
-for i from 1 to nops(par) do
-    if i<>key then
-       a    := R();
-       ssys := subs(par[i]=a, ssys);
-       A    := [op(A), a];
+R        := rand(1..N);
+R_change := rand(1..N_change); 
+A        := [seq(R(), i = 1 .. nops(par), 2), seq(R_change(), i = 1 .. nops(par), 2)];
+ssys     := subs(seq(par[i]=A[i], i=1..(key-1)), seq(par[i]=A[i], i=(key+1)..nops(par)), sys);
+rlin     := subs(seq(par[i]=A[i], i=1..(key-1)), seq(par[i]=A[i], i=(key+1)..nops(par)), lin);
+rlin     := [seq(rlin[i]/lcoeff(rlin[i]), i=1..nops(rlin))];
+A        := subsop(key=NULL, A);
+lis      := wif(ssys, var, [par[key]]);
+count    := count + 1;
+notallone_factors := [];
+for i from 1 to nops(lis) do
+    if degree(lis[i])=1 and evalb(lis[i] in rlin)=false then
+        notallone_factors := [op(notallone_factors), lis[i]];
     end if;
 end do;
-list  := wif(ssys, var, [par[key]]);
-count := count+1; 
-g     := 1;
-for i from 1 to nops(list) do
-    if degree(list[i], par[key])>1 then
-        g := expand(g*list[i]);
-    end if;
+while nops(notallone_factors)<>td do
+      K_change    := N_change + 10;
+      notallone_factors, A := Sample_notallone(sys, var, par, key, td, lin, N, K_change);    
 end do;
-K := N;
-while nops(g)<>(d+1) do
-      K    := K + 10;
-      g, A := Intersection(sys, var, par, key, d, K);
-end do;
-return g, A; 
+return notallone_factors, A;
 end proc: 
 
-################## 
-tIntersection := proc(sys, var, par, key, td, lin, N)
-local ssys, R, A, rlin, i, a, list, tf, K;
+##################
+Sample_nonlinear := proc(sys, var, par, key, nd, N, N_change)
+local R, R_change, A, ssys, lis, nonlinear, K_change, i;
 global count;
-ssys := sys;
-R    := rand(1..N);
-A    := [];
-rlin := lin;
-for i from 1 to nops(par) do
-   if i<>key then
-       a    := R();
-       ssys := subs(par[i]=a, ssys);
-       rlin := subs(par[i]=a, rlin);
-       A    := [op(A), a];
-   end if;
-end do;
-for i from 1 to nops(rlin) do
-    rlin[i] := rlin[i]/lcoeff(rlin[i]);
-end do;
-list  := wif(ssys, var, [par[key]]);
-count := count+1; 
-tf    := 1;
-for i from 1 to nops(list) do
-    if degree(list[i], par[key])=1 and evalb(list[i] in rlin)=false then
-        tf := expand(tf*list[i]);
+R        := rand(1..N);
+R_change := rand(1..N_change); 
+A        := [seq(R(), i = 1 .. nops(par), 2), seq(R_change(), i = 1 .. nops(par), 2)];
+ssys     := subs(seq(par[i]=A[i], i=1..(key-1)), seq(par[i]=A[i], i=(key+1)..nops(par)), sys);
+A        := subsop(key=NULL, A);
+lis      := wif(ssys, var, [par[key]]);
+count    := count + 1;
+nonlinear := 1;
+for i from 1 to nops(lis) do
+    if degree(lis[i])>1 then
+        nonlinear := nonlinear * lis[i];
     end if;
 end do;
-K := N;
-while nops(tf)<>(td+1) do
-      K     := K+10;
-      tf, A := tIntersection(sys, var, par, key, td, lin, K);    
+while nops(nonlinear)<>(nd+1) do
+      K_change     := N_change + 10;
+      nonlinear, A := Sample_nonlinear(sys, var, par, key, nd, N, K_change);    
 end do;
-return tf, A; 
+return nonlinear, A;
 end proc: 
 
-##################sampling for InterpolationAtOnce 
-bIntersection := proc(sys, var, par, key, nond, nlind, lin, N)
-local ssys, R, A, rlin, i, a, list, non, nlin, K;
+##################
+Sample_both := proc(sys, var, par, key, nd, td, lin, N, N_change)
+local R, R_change, A, ssys, rlin, lis, nonlinear_factors, notallone_factors, K_change, i, nonlinear;
 global count;
-ssys := sys;
-rlin := lin;
-R    := rand(1..N);
-A    := [];
-for i from 1 to nops(par) do
-    if i<>key then
-       a    := R();
-       ssys := subs(par[i]=a, ssys);
-       rlin := subs(par[i]=a, rlin);
-       A    := [op(A), a];
+R        := rand(1..N);
+R_change := rand(1..N_change); 
+A        := [seq(R(), i = 1 .. nops(par), 2), seq(R_change(), i = 1 .. nops(par), 2)];
+ssys     := subs(seq(par[i]=A[i], i=1..(key-1)), seq(par[i]=A[i], i=(key+1)..nops(par)), sys);
+rlin     := subs(seq(par[i]=A[i], i=1..(key-1)), seq(par[i]=A[i], i=(key+1)..nops(par)), lin);
+rlin     := [seq(rlin[i]/lcoeff(rlin[i]), i=1..nops(rlin))];
+A        := subsop(key=NULL, A);
+lis      := wif(ssys, var, [par[key]]);
+count    := count + 1;
+nonlinear         := 1;
+notallone_factors := [];
+for i from 1 to nops(lis) do
+    if degree(lis[i])>1 then
+         nonlinear := nonlinear * lis[i];
+    elif degree(lis[i])=1 and evalb(lis[i] in rlin)=false then
+         notallone_factors := [op(notallone_factors), lis[i]];
     end if;
 end do;
-for i from 1 to nops(rlin) do
-    rlin[i] := rlin[i]/lcoeff(rlin[i]);
+while nops(nonlinear)<>(nd+1) or nops(notallone_factors)<>td do
+      K_change    := N_change + 10;
+      nonlinear, notallone_factors, A := Sample_both(sys, var, par, key, nd, td, lin, N, K_change);    
 end do;
-list  := wif(ssys, var, [par[key]]);
-count := count+1; 
-non   := 1;
-nlin  := 1;
-for i from 1 to nops(list) do
-    if degree(list[i], par[key])>1 then
-         non  := expand(non*list[i]);
-    elif degree(list[i], par[key])=1 and evalb(list[i] in rlin)=false then
-         nlin := expand(nlin*list[i]);
-    end if;
-end do;
-K := N;
-while nops(non)<>(nond+1) or nops(nlin)<>(nlind+1) do
-      K            := K + 10;
-      non, nlin, A := bIntersection(sys, var, par, key, nond, nlind, lin, K);
-end do;
-return non, nlin, A; 
+return nonlinear, notallone_factors, A;
 end proc: 
 
-##################the function is to compute nonlinear factors of W-infinity
-InterpolationAtOnce := proc(sor, newsys, newvar, par, newpar, key, nondlist, newlin, nlind, N)
-local d, restpar, restd, T, M, i, j, k, temp, inters, S, non, nlin, A, DJ, m, B, C, mon, v, sDJ;
+################## The function is to compute nonlinear factors of W-infinity.
+Nonlinear := proc(sor, newsys, newvar, par, key, nondlist, newlin, td, N)
+local d, restpar, restd, T, M, i, j, k, temp, inters, S, non, nlin, A, DJ, m, B, C, mon, v, non_list, non_poly, notallone_list, notallone_poly;
 d       := nondlist[key]; 
 restpar := subsop(key=NULL, par);
 restd   := subsop(key=NULL, nondlist);
@@ -508,16 +451,17 @@ for i from 1 to d do
      end do; 
 end do;
 S      := Array(1..M);
-if sor=1 then
+inters := Array(1..M);
+if sor = 1 then
     for i from 1 to M do
-        S[i] := [Intersection(newsys, newvar, par, key, d, N)];
+        S[i]        := [Sample_nonlinear(newsys, newvar, par, key, d, N, N)];
     end do;
-else
-    inters := Array(1..M); print(inters);
+else   
     for i from 1 to M do
-        non, nlin, A := bIntersection(newsys, newvar, par, key, d, nlind, newlin, N);
-        S[i]         := [non,  A];
-        inters[i]    := [nlin, A];
+        non_poly, notallone_list, A := Sample_both(newsys, newvar, par, key, d, td, newlin, N, N);
+        notallone_poly              := expand(mul(notallone_list[i], i=1..nops(notallone_list)));
+        S[i]                        := [non_poly,  A];
+        inters[i]                   := [notallone_poly, A];
     end do;
 end if;
 DJ := par[key]^d;
@@ -533,20 +477,13 @@ for i from 1 to d do
         C[j] := subs(seq(restpar[k]=S[j][2][k], k=1..nops(restpar)), T[i][1..m]);
     end do;
     mon := Matrix([T[i][1..m]]).MatrixInverse(Matrix(C)).Transpose(Matrix([B]));
-    DJ  := DJ + mon[1, 1]*par[key]^(d-i);       
+    DJ  := DJ + mon[1, 1] * par[key]^(d-i);       
 end do;
-v   := solve([seq(t||i-newpar[i], i=1..nops(par))], par);
-sDJ := subs([seq(t||i=par[i], i=1..nops(par))], subs(op(v), DJ));
-sDJ := expand(sDJ);
-sDJ := sDJ/lcoeff(sDJ, order = tdeg(op(par)));
-if sor=1 then
-    return sDJ;
-else
-    return sDJ, inters;
-end if;
+# save S, inters, DJ, "bc6_nonlinear.txt";
+return DJ, inters;
 end proc: 
 
-##################initial step=1
+################## Initial step=1.
 rectree := proc(lis, num, step)    
 local le, A, ls, R, r, newrow, newcol, i, j, k, t, s;
 if step=nops(lis) then
@@ -654,14 +591,15 @@ return ter, nt;
 end proc:
 
 ##################
-notallone := proc(newsys, var, par, newpar, key, ndlist, newlin, inters, N)
-local restpar, num, ter, nt, nrow, DJ, T, temp, S, SS, B, C, mon, uterm, m, M, cterm, ncterm, cand, q, fDJ, sDJ, mDJ, v, i, j, k, numin;
+NotAllOne := proc(newsys, var, par, key, ndlist, newlin, inters, N)
+local restpar, num, ter, nt, nrow, DJ, T, temp, S, SS, B, C, mon, uterm, m, M, cterm, ncterm, cand, q, fDJ, mDJ, v, i, j, k, numin, notallone_list, notallone_poly, A;
 restpar := subsop(key=NULL, par);
 num     := ndlist[key];
-ter, nt := maintree(par, ndlist, num, key); print(ter, nt);
+ter, nt := maintree(par, ndlist, num, key);
 nrow    := upperbound(ter, 1); 
 DJ      := par[key]^num;
 T       := Array(1..num, 1..max(nt));
+###### = 1 possibility
 if nrow=1 then
    for i from 1 to num do
        temp := ter[1, i];
@@ -672,14 +610,22 @@ if nrow=1 then
    M := max(nt);
    S := Array(1..M);
    if type(inters, 'list') then
-       for i from 1 to M do S[i] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+       for i from 1 to M do 
+           notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+           notallone_poly    := expand(mul(notallone_list[i], i=1..nops(notallone_list)));
+           S[i] := [notallone_poly, A]; 
+        end do;
    else  
-       numin := ArrayNumElems(inters); 
+       numin := ArrayNumElems(inters);
        if M<=numin then
            for i from 1 to M do S[i] := inters[i]; end do;
        else
            for i from 1 to numin do   S[i] := inters[i]; end do;
-           for i from numin+1 to M do S[i] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+           for i from numin+1 to M do 
+               notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+               notallone_poly    := expand(mul(notallone_list[i], i=1..nops(notallone_list)));
+               S[i] := [notallone_poly, A]; 
+            end do;
        end if;
    end if;
    for i from 1 to num do
@@ -696,7 +642,7 @@ if nrow=1 then
        mon := Matrix([T[i][1..m]]).MatrixInverse(Matrix(C)).Transpose(Matrix([B]));
        DJ  := DJ + mon[1, 1]*par[key]^(num-i);        
    end do;
-   mDJ := DJ;
+###### >1 possibilities
 else
    uterm := Array(1..num-1, fill={});
    for i from 1 to num-1 do
@@ -709,17 +655,28 @@ else
    end do;
    M := max(seq(nops(uterm[i]), i=1..num-1)); 
    S := Array(1..M);
+   ###### DJ = v0^{num} + C_{num-1} * v0^{num-1} + ... + C_{1} * v0^{1} + C_{0}
+   ###### Interpolate for C_{num-1},...,C_{1} 
    if type(inters, 'list') then
-       for i from 1 to M do S[i] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+       for i from 1 to M do 
+           notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+           notallone_poly    := expand(mul(notallone_list[i], i=1..nops(notallone_list)));
+           S[i] := [notallone_poly, A]; 
+        end do;
    else  
        numin := ArrayNumElems(inters); 
        if M<=numin then
            for i from 1 to M do S[i] := inters[i]; end do;
        else
            for i from 1 to numin do   S[i] := inters[i]; end do;
-           for i from numin+1 to M do S[i] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+           for i from numin+1 to M do 
+               notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+               notallone_poly    := expand(mul(notallone_list[i], i=1..nops(notallone_list)));
+               S[i] := [notallone_poly, A];  
+            end do;
        end if;
    end if;
+   ###### Solve the linear system for C_{num-1},...,C_{1} 
    cterm := Array(1..num-1, fill={});
    for i from 1 to num-1 do
        m   := ArrayNumElems(T[i], NonZero);
@@ -747,84 +704,95 @@ else
           if q=num-1 then cand := [op(cand), [nt[j, num], j]]; end if;
        end if;
    end do;
-   cand := sort(cand, (x, y) -> y[1] <= x[1]); print(cand);
+   cand := sort(cand, (x, y) -> y[1] <= x[1]); 
    for i from 1 to nops(cand) do
        temp := ter[cand[i][2], num]; 
        m    := nops(temp);  
+       ###### Interpolate for C_{0} 
        if i=1 then
            SS := Array(1..m);
            if type(inters, 'list') then                            
                if m<=M then for j from 1 to m do SS[j] := S[j]; end do;
                else
                    for j from 1 to M do   SS[j] := S[j]; end do;
-                   for j from M+1 to m do SS[j] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+                   for j from M+1 to m do 
+                       notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+                       notallone_poly    := expand(mul(notallone_list[i], i=1..nops(notallone_list))); 
+                       SS[j] := [notallone_poly, A]; 
+                    end do;
                end if;
            else
                if m<=M then for j from 1 to m do SS[j] := S[j]; end do;
                elif max(m, M, numin)=numin then for j from 1 to m do SS[j] := inters[j]; end do;
                elif min(m, M, numin)=M then
                     for j from 1 to numin do SS[j] := inters[j]; end do;
-                    for j from numin+1 to m do SS[j] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+                    for j from numin+1 to m do 
+                        notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+                        notallone_poly    := expand(mul(notallone_list[i], i=1..nops(notallone_list))); 
+                        SS[j] := [notallone_poly, A]; 
+                    end do;
                elif min(m, M, numin)=numin then
                     for j from 1 to M do SS[j] := S[j]; end do;
-                    for j from M+1 to m do SS[j] := [tIntersection(newsys, var, par, key, num, newlin, N)]; end do;
+                    for j from M+1 to m do 
+                        notallone_list, A := Sample_notallone(newsys, var, par, key, num, newlin, N, N);
+                        notallone_poly := expand(mul(notallone_list[i], i=1..nops(notallone_list)));       
+                        SS[j] := [notallone_poly, A]; 
+                    end do;
                end if;
            end if;
        end if;
-       for j from 1 to m do T[num, j] := temp[j]; end do; print(T);
+       ###### Solve the linear system for C_{0}.
+       for j from 1 to m do T[num, j] := temp[j]; end do; 
        B := [seq(subs(par[key]=0, SS[k][1]), k=1..m)]; 
        C := Array(1..m, 1..m);
        for j from 1 to m do
            C[j] := subs(seq(restpar[k]=SS[j][2][k], k=1..nops(restpar)), T[num][1..m]);
        end do;
        mon := Matrix([T[num][1..m]]).MatrixInverse(Matrix(C)).Transpose(Matrix([B]));
-       mDJ := DJ + mon[1, 1]; 
-       fDJ := factors(mDJ); 
-       if nops(fDJ[2])=num then break; end if;
+       DJ  := DJ + mon[1, 1]; 
+       fDJ := factors(DJ); 
+       if nops(fDJ[2])=num then 
+          break; 
+        end if;
    end do;
 end if;
-v   := solve([seq(t||i-newpar[i], i=1..nops(par))], par); 
-sDJ := subs([seq(t||i=par[i], i=1..nops(par))], subs(op(v), mDJ)); 
-sDJ := expand(sDJ); 
-sDJ := sDJ/lcoeff(sDJ, order = tdeg(op(par))); 
-return factor(sDJ);
+return DJ;
 end proc:
 
 ##################
-ww := proc(f, var, par, N)
-local sys, newvar, clin, cdlist, newsys, tt, newdlist, nondlist, key, newpar, newlin, ndlist, non, nlin, l, i, inters, st, st1;
+ww := proc(f, var, par, N_linear, N_cone, N)
+### LinearOperator: N_linear
+### AllOne        : N_cone
+### Interpolate   : N
+local sys, newvar, clin, cdlist, newsys, tt, newdlist, nondlist, key, newpar, newlin, ndlist, non, nlin, l, i, inters, factorl, v, newl, NN_linear, NN_cone, NN;
 global count;
 count        := 0;
 sys, newvar  := lle(f, var, par);
-clin, cdlist := cone(sys, newvar, par, 0);
-newsys, tt, newdlist, nondlist, key, newpar := LinearOperator(sys, newvar, par, 10); print(newdlist); print(nondlist);
-newlin       := subs(seq(par[i]=newpar[i], i=1..nops(par)), clin);
-cdlist[key]  := nops(clin); print(cdlist);
-ndlist       := [];
-for i from 1 to nops(par) do
-    ndlist := [op(ndlist), newdlist[i]-nondlist[i]-cdlist[i]];
-end do;
-print(ndlist);
-st := time():
+newsys, tt, newdlist, nondlist, key, newpar := LinearOperator(sys, newvar, par, N_linear); 
+st  := time():
+clin, cdlist := AllOne(sys, newvar, par, N_cone);
+cdlist[key]  := nops(clin); 
+ndlist := [seq(newdlist[i]-nondlist[i]-cdlist[i], i=1..nops(newdlist))];
 if max(nondlist)=0 and max(ndlist)=0 then
-     l      := mul(clin[i], i=1..nops(clin));
+     l := mul(clin[i], i=1..nops(clin));
+     return l;
 elif max(nondlist)>0 and max(ndlist)=0 then
-     clin   := mul(clin[i], i=1..nops(clin));
-     non    := InterpolationAtOnce(1, newsys, newvar, par, newpar, key, nondlist, newlin, ndlist[key], N);
-     l      := clin*non;
+     newl, inters := Nonlinear(1, newsys, newvar, par, key, nondlist, [], ndlist[key], N);
 elif max(nondlist)=0 and max(ndlist)>0 then
-     inters := [];
-     clin   := mul(clin[i], i=1..nops(clin));
-     nlin   := notallone(newsys, newvar, par, newpar, key, ndlist, newlin, inters, N);   
-     l      := clin*nlin; 
-elif max(nondlist)>0 and max(ndlist)>0 then
-     clin   := mul(clin[i], i=1..nops(clin));
-     non, inters := InterpolationAtOnce(2, newsys, newvar, par, newpar, key, nondlist, newlin, ndlist[key], N); 
-     nlin   := notallone(newsys, newvar, par, newpar, key, ndlist, newlin, inters, N); 
-     l      := clin*non*nlin;
+     newlin       := subs(seq(par[i]=newpar[i], i=1..nops(par)), clin);
+     newl         := NotAllOne(newsys, newvar, par, key, ndlist, newlin, [], N); 
+else 
+     newlin       := subs(seq(par[i]=newpar[i], i=1..nops(par)), clin);
+     non, inters  := Nonlinear(2, newsys, newvar, par, key, nondlist, newlin, ndlist[key], N); 
+     nlin         := NotAllOne(newsys, newvar, par, key, ndlist, newlin, inters, N); 
+     newl         := non * nlin;
 end if;
-st1 := time()-st;  
-save st1, count, l, "temp.txt";
-return l;
+v := solve([seq(t||i-newpar[i], i=1..nops(par))], par);
+l := subs([seq(t||i=par[i], i=1..nops(par))], subs(op(v), newl));
+l := expand(l * mul(clin[i], i=1..nops(clin)));
+l := l/lcoeff(l, order = tdeg(op(par)));
+l := factor(l);
+st1       := time()-st;
+save st1, l, "bc9.mpl";
+return l, count;
 end proc:
-
